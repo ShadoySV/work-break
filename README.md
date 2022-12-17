@@ -33,7 +33,7 @@ See the official documentation [here](https://www.rust-lang.org/tools/install) t
 
 Then run this command and remember the path where the executable has placed:
 ```sh
-cargo install --path .
+cargo install work-break
 ```
 
 ### Install required icons
