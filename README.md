@@ -30,20 +30,12 @@ It beeps when work time is 25 and 52 minutes and when rest ends.
 You will need the Rust programming language and its cargo package manager installed on your system.
 
 See the official documentation [here](https://www.rust-lang.org/tools/install) to get it installed.
+Do not forget to configure the `PATH` environment variable.
 
 Then run this command and remember the path where the executable has placed:
 ```sh
 cargo install work-break
 ```
-
-### Install required icons
-
-To install the required icons execute this command:
-
-```sh
-./install_icons.sh
-```
-
 
 ### Add the application to XFCE panel
 
@@ -52,9 +44,9 @@ Hover your mouse over the added item and remember the number after the `genmon-`
 Open properties for the item and set the command to the executable path.
 Disable the label and set the period to 1 second, then save.
 
-Bind the application with the item by replacing `item_id` with the number you have remembered and running this command:
+Bind the application with the item by replacing `<item_id>` with the number you have remembered and running this command:
 ```sh
-cargo run -- bind_plugin_id item_id
+work-break bind_plugin_id <item_id>
 ```
 
 You can click the item or add a keyboard shortcut (e. g. on the Pause/Break button) to the executable path followed by the `toggle` parameter to start/stop tracking work time.
