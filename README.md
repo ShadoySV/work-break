@@ -28,7 +28,7 @@ Linux/BSD: (should work with many distributions, tested on Arch Linux)
 
 ### Download an executable
 
-Download a suitable executable from https://github.com/ShadoySV/work-break/releases and copy it to some directory that lists in your PATH.
+Download a suitable executable from [releases](https://github.com/ShadoySV/work-break/releases) and copy it to some directory that lists in your PATH.
 
 ### With Cargo
 
