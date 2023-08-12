@@ -1,5 +1,3 @@
-# Work-break balancer for Windows / MacOS / Linux desktops
-
 ![work-break](screenshot.png)
 
 ## Introduction

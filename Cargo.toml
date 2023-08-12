@@ -1,11 +1,12 @@
 [package]
 name = "work-break"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Work-break balancer for Windows / MacOS / Linux desktops"
 license = "MIT"
 authors = ["Sergei Shadoy <shadoysv@gmail.com>"]
 repository = "https://github.com/ShadoySV/work-break"
+keywords = ["productivity", "app", "cross-platform", "time-tracker"]
 
 build = "build.rs"
 

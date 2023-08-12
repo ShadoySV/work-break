@@ -174,7 +174,10 @@ impl App {
 
         if notify_anyway || notify_on_threshold {
             let mut notification = Notification::new();
-            notification.summary("Work-break balancer").body(&status);
+            notification
+                .summary("Work-break balancer")
+                .auto_icon()
+                .body(&status);
 
             #[cfg(not(any(target_os = "windows", target_os = "macos")))]
             notification.urgency(urgency);
