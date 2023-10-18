@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 TryExec=work-break
-Exec=work-break
+Exec=work-break autorun
 Icon=work-break
 Terminal=false
 Categories=Utility;
