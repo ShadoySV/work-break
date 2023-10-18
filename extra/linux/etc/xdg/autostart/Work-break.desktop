@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+TryExec=work-break
+Exec=work-break
+Icon=work-break
+Terminal=false
+Categories=Utility;
+
+Name=Work-break
+GenericName=Time tracker
+Comment=This balancer can track your work time and suggest resting time. It passes through the Pomodoro Technique (25/5) and the 52/17 rule.
+StartupNotify=false
+StartupWMClass=Work-break

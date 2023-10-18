@@ -9,7 +9,7 @@ mod math;
 
 use app::{socket_name, App, Ipc};
 
-/// Work-break balancer can track your work time and suggest break time
+/// Work-break balancer can track your work time and suggest resting time
 #[derive(Parser)]
 pub struct Cli {
     #[command(subcommand)]
@@ -18,12 +18,14 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Run the app in background to send you notifications
+    Autorun,
     /// Asks the app to reload configuration
     Reload,
+    /// Prints the current status (CLI)
+    Status,
     /// Sends you notification with the current status
     Notify,
-    /// Switches between work and break time
-    Switch,
     /// Terminates the app
     Terminate,
 }
@@ -34,31 +36,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let socket = socket_name();
 
     match &cli.command {
+        Some(Commands::Autorun) => {
+            App::new()?.start(false)?;
+        }
         Some(Commands::Reload) => {
             let stream = LocalSocketStream::connect(&*socket).map_err(|_| "App is not running")?;
             ron::ser::to_writer(stream, &Ipc::Reload)?;
         }
+        Some(Commands::Status) => {
+            let (_, _, status) = App::new()?.status()?;
+            println!("{}", status);
+        }
         Some(Commands::Notify) => {
             let stream = LocalSocketStream::connect(&*socket).map_err(|_| "App is not running")?;
             ron::ser::to_writer(stream, &Ipc::Notify)?;
-        }
-        Some(Commands::Switch) => {
-            let stream = LocalSocketStream::connect(&*socket).map_err(|_| "App is not running")?;
-            ron::ser::to_writer(stream, &Ipc::Switch)?;
         }
         Some(Commands::Terminate) => {
             let stream = LocalSocketStream::connect(&*socket).map_err(|_| "App is not running")?;
             ron::ser::to_writer(stream, &Ipc::Terminate)?;
         }
         None => {
-            let mut app = App::new()?;
             if let Ok(stream) = LocalSocketStream::connect(&*socket) {
-                ron::ser::to_writer(stream, &Ipc::Update)?;
-                let (_, _, status) = app.status()?;
-
-                println!("{}", status);
+                ron::ser::to_writer(stream, &Ipc::Switch)?;
             } else {
-                app.start()?;
+                App::new()?.start(true)?;
             }
         }
     };

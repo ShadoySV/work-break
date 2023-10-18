@@ -1,6 +1,6 @@
 [package]
 name = "work-break"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 description = "Work-break balancer for Windows / MacOS / Linux desktops"
 license = "MIT"
@@ -22,5 +22,5 @@ ron = "0.8.0"
 ctrlc = { version = "3.2.5", features = ["termination"] }
 notify-rust = "4.8.0"
 
-[build-dependencies]
-winresource = "0.1"
+[target.'cfg(windows)'.build-dependencies]
+embed-resource = "2.2.0"

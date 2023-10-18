@@ -30,13 +30,13 @@ impl Activities {
         });
     }
 
-    /// Returns end, strain and work
-    pub fn work(
+    /// Returns end, strain and total work
+    pub fn summary(
         &self,
         formula: &Formula,
         now: SystemTime,
     ) -> (Option<SystemTime>, Duration, Duration) {
-        let (end, strain, work) =
+        let (end, strain, total_work) =
             self.list
                 .iter()
                 .fold((None, Duration::ZERO, Duration::ZERO), |state, item| {
@@ -44,8 +44,12 @@ impl Activities {
                     let Activity { start, end } = item;
                     if let Some(prev_end) = prev_end {
                         let rest = start.duration_since(prev_end).unwrap();
-                        strain = formula
-                            .compute_strain(formula.compute_break(strain).saturating_sub(rest));
+                        strain = formula.compute_strain(
+                            formula
+                                .compute_break(strain, total_work)
+                                .saturating_sub(rest),
+                            total_work,
+                        );
                     };
                     let work = end.unwrap_or(now).duration_since(*start).unwrap();
                     strain += work;
@@ -58,13 +62,14 @@ impl Activities {
             if let Some(end) = end {
                 formula.compute_strain(
                     formula
-                        .compute_break(strain)
+                        .compute_break(strain, total_work)
                         .saturating_sub(now.duration_since(end).unwrap()),
+                    total_work,
                 )
             } else {
                 strain
             },
-            work,
+            total_work,
         )
     }
 

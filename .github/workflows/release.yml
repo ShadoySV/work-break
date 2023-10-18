@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  macos:
+    runs-on: macos-11
+
+    steps:
+      - name: Rust stable
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: brew install scdoc
+      - name: Install ARM target
+        run: rustup update && rustup target add aarch64-apple-darwin
+      - name: Test
+        run: cargo test --release
+      - name: Make DMG
+        run: make dmg-universal
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./target/release/osx/Work-break.dmg
+
+  windows:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Rust stable
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - uses: actions/checkout@v3
+      - name: Test
+        run: cargo test --release
+      - name: Build
+        run: cargo build --release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./target/release/work-break.exe
+
+  linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Rust stable
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - uses: actions/checkout@v3
+      - name: Test
+        run: cargo test --release
+      - name: Build
+        run: cargo build --release
+      - name: Prepare deb package files
+        run: |
+          mkdir -p .debpkg/usr/bin
+          cp ./target/release/work-break .debpkg/usr/bin
+          cp -r extra/linux/* .debpkg
+          mkdir .debpkg/usr/share/work-break
+          cp ./LICENSE .debpkg/usr/share/work-break
+      - uses: jiro4989/build-deb-action@v3
+        with:
+          package: work-break
+          package_root: .debpkg
+          maintainer: Sergei Shadoy <shadoysv@gmail.com>
+          version: ${{ github.ref }}
+          arch: "amd64"
+          desc: "Work-break balancer for Windows / MacOS / Linux desktops"
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./*.deb

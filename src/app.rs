@@ -6,12 +6,15 @@ use std::{
 
 use chrono::{DateTime, Local};
 use interprocess::local_socket::LocalSocketListener;
-use notify_rust::{Notification, Urgency};
+
+use notify_rust::Notification;
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+use notify_rust::Urgency;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     activities::Activities,
-    math::{CoefficientA, CoefficientB, CoefficientC, Formula},
+    math::{CoefficientA, CoefficientB, CoefficientC, CoefficientD, Formula},
 };
 
 pub const APP_NAME: &str = env!("CARGO_PKG_NAME");
@@ -38,6 +41,24 @@ pub const STATE_NAME: Option<&str> = Some("dev-state");
 #[cfg(not(debug_assertions))]
 pub const STATE_NAME: Option<&str> = Some("default-state");
 
+#[derive(Serialize, Deserialize)]
+pub struct Phase1End(pub u8);
+
+impl Default for Phase1End {
+    fn default() -> Self {
+        Phase1End(25)
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Phase2End(pub u8);
+
+impl Default for Phase2End {
+    fn default() -> Self {
+        Phase2End(52)
+    }
+}
+
 #[derive(Default, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
@@ -47,13 +68,31 @@ pub struct Config {
     #[serde(default)]
     pub coefficient_c: CoefficientC,
     #[serde(default)]
+    pub coefficient_d: CoefficientD,
+    #[serde(default)]
     pub daily_work_time_limit: u16,
     #[serde(default)]
     pub work_days_start_at: u8,
+    #[serde(default)]
+    pub phase1_ends_at: Phase1End,
+    #[serde(default)]
+    pub phase1_name: Option<String>,
+    #[serde(default)]
+    pub phase2_ends_at: Phase2End,
+    #[serde(default)]
+    pub phase2_name: Option<String>,
+    #[serde(default)]
+    pub phase3_name: Option<String>,
 }
+
 impl Config {
     pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
-        Ok(confy::load(APP_NAME, CONFIG_NAME)?)
+        let config: Self = confy::load(APP_NAME, CONFIG_NAME)?;
+        assert!(
+            config.phase1_ends_at.0 < config.phase2_ends_at.0,
+            "Configuration: phase 1 must end earlier than phase 2!"
+        );
+        Ok(config)
     }
 }
 
@@ -87,9 +126,10 @@ impl App {
             &config.coefficient_a,
             &config.coefficient_b,
             &config.coefficient_c,
+            &config.coefficient_d,
         );
         let now = SystemTime::now();
-        let (_, last_strain, last_work) = state.activities.work(&formula, now);
+        let (_, last_strain, last_work) = state.activities.summary(&formula, now);
         Ok(App {
             last_strain,
             last_work,
@@ -103,6 +143,7 @@ impl App {
             &self.config.coefficient_a,
             &self.config.coefficient_b,
             &self.config.coefficient_c,
+            &self.config.coefficient_d,
         );
         let now = SystemTime::now();
         let now_ch: DateTime<Local> = DateTime::from(now);
@@ -119,13 +160,17 @@ impl App {
         let truncate_point = UNIX_EPOCH + Duration::from_secs(morning_local.timestamp() as u64);
         self.state.activities.truncate_until(truncate_point);
 
-        let (end, strain, work) = self.state.activities.work(&formula, now);
+        let (end, strain, work) = self.state.activities.summary(&formula, now);
 
         let phase = if !self.state.activities.list.is_empty() && end.is_none() {
-            match strain.as_secs() / 60 {
-                0..=24 => "Pomodoro",
-                25..=51 => "Efficiency",
-                52.. => "Injury",
+            let whole_minutes = strain.as_secs() / 60;
+
+            if whole_minutes < self.config.phase1_ends_at.0 as u64 {
+                self.config.phase1_name.as_deref().unwrap_or("Pomodoro")
+            } else if whole_minutes < self.config.phase2_ends_at.0 as u64 {
+                self.config.phase2_name.as_deref().unwrap_or("Efficiency")
+            } else {
+                self.config.phase3_name.as_deref().unwrap_or("Injury")
             }
         } else if strain.is_zero() {
             "Ready"
@@ -134,12 +179,12 @@ impl App {
         };
 
         let status = format!(
-            "Phase: {phase}\nStrain: {} min.\nBreak: {} min, ends at: {}\nToday: {} hrs, {} min.",
+            "Phase: {phase}\nStrain: {} min, today: {} hrs, {} min\nBreak: {} min, ends at: {}",
             strain.as_secs() / 60,
-            formula.compute_break(strain).as_secs() / 60,
-            DateTime::<Local>::from(now + formula.compute_break(strain)).format("%X"),
             work.as_secs() / 3600,
-            (work.as_secs() - work.as_secs() / 3600 * 3600) / 60
+            (work.as_secs() - work.as_secs() / 3600 * 3600) / 60,
+            formula.compute_break(strain, work).as_secs() / 60,
+            DateTime::<Local>::from(now + formula.compute_break(strain, work)).format("%X"),
         );
 
         Ok((strain, work, status))
@@ -148,31 +193,28 @@ impl App {
     pub fn notify(&mut self, notify_anyway: bool) -> Result<(), Box<dyn std::error::Error>> {
         let (strain, work, status) = self.status()?;
 
-        const POMODORO: Duration = Duration::from_secs(25 * 60);
-        const EFFICIENCY: Duration = Duration::from_secs(52 * 60);
+        let phase1_ends_at = Duration::from_secs(self.config.phase1_ends_at.0 as u64 * 60);
+        let phase2_ends_at = Duration::from_secs(self.config.phase2_ends_at.0 as u64 * 60);
         let daily_work_time_limit =
             Duration::from_secs(self.config.daily_work_time_limit as u64 * 60);
-        let mut urgency = Urgency::Low;
-        let notify_on_threshold = self.last_strain < POMODORO && strain >= POMODORO
-            || self.last_strain < EFFICIENCY && strain >= EFFICIENCY
+        let notify_on_threshold = self.last_strain < phase1_ends_at && strain >= phase1_ends_at
+            || self.last_strain < phase2_ends_at && strain >= phase2_ends_at
             || !self.last_strain.is_zero() && strain.is_zero()
             || !daily_work_time_limit.is_zero()
                 && self.last_work < daily_work_time_limit
                 && work >= daily_work_time_limit;
 
-        if strain >= POMODORO {
-            urgency = Urgency::Normal;
-        }
-
-        if strain >= EFFICIENCY || !daily_work_time_limit.is_zero() && work >= daily_work_time_limit
-        {
-            urgency = Urgency::Critical;
-        }
-
-        self.last_strain = strain;
-        self.last_work = work;
-
         if notify_anyway || notify_on_threshold {
+            #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+            let mut urgency = Urgency::Low;
+
+            #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+            if strain >= phase2_ends_at
+                || !daily_work_time_limit.is_zero() && work >= daily_work_time_limit
+            {
+                urgency = Urgency::Normal;
+            }
+
             let mut notification = Notification::new();
             notification
                 .summary("Work-break balancer")
@@ -182,14 +224,11 @@ impl App {
             #[cfg(not(any(target_os = "windows", target_os = "macos")))]
             notification.urgency(urgency);
 
-            #[cfg(target_os = "windows")]
-            if urgency == Urgency::Critical {
-                use notify_rust::Timeout;
-                notification.timeout(Timeout::Never);
-            };
-
             notification.show()?;
         }
+
+        self.last_strain = strain;
+        self.last_work = work;
 
         Ok(())
     }
@@ -202,7 +241,7 @@ impl App {
         Ok(())
     }
 
-    pub fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn start(&self, switch: bool) -> Result<(), Box<dyn std::error::Error>> {
         let socket = socket_name();
 
         let (sender, receiver) = sync_channel(0);
@@ -237,6 +276,9 @@ impl App {
         });
 
         let mut app = App::new()?;
+        if switch {
+            app.switch()?;
+        }
 
         for ipc in receiver.iter() {
             match ipc {
