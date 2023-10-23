@@ -18,7 +18,7 @@ The notification contains the current phase, strain and today work time, needed 
 
 ### Compatibility
 
-Windows 8+ (tested on Windows 10)
+Windows 8+ (requires [MS Visual C++ 2015](https://www.microsoft.com/en-us/download/details.aspx?id=52685), tested on Windows 10)
 
 MacOS 10+ (tested on MacOS 11.7)
 
