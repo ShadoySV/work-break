@@ -49,11 +49,13 @@ jobs:
       - name: Test
         run: cargo test --release
       - name: Build
-        run: cargo build --release
+        run: |
+          cargo build --release
+          cp ./target/release/work-break.exe ./Work-break.exe
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./target/release/work-break.exe
+          files: ./Work-break.exe
 
   linux:
     runs-on: ubuntu-latest
@@ -83,7 +85,7 @@ jobs:
           maintainer: Sergei Shadoy <shadoysv@gmail.com>
           version: ${{ github.ref }}
           arch: "amd64"
-          desc: "Work-break balancer for Windows / MacOS / Linux desktops"
+          desc: "Work and rest time balancer taking into account your current and today strain"
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:

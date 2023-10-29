@@ -8,8 +8,6 @@ use chrono::{DateTime, Local};
 use interprocess::local_socket::LocalSocketListener;
 
 use notify_rust::Notification;
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
-use notify_rust::Urgency;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -205,24 +203,11 @@ impl App {
                 && work >= daily_work_time_limit;
 
         if notify_anyway || notify_on_threshold {
-            #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-            let mut urgency = Urgency::Low;
-
-            #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-            if strain >= phase2_ends_at
-                || !daily_work_time_limit.is_zero() && work >= daily_work_time_limit
-            {
-                urgency = Urgency::Normal;
-            }
-
             let mut notification = Notification::new();
             notification
                 .summary("Work-break balancer")
                 .auto_icon()
                 .body(&status);
-
-            #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-            notification.urgency(urgency);
 
             notification.show()?;
         }

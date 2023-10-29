@@ -16,6 +16,8 @@ The notification contains the current phase, strain and today work time, needed 
 
 ## How to install
 
+<a href="https://www.softpedia.com/get/Others/Home-Education/work-break.shtml"><img style="float: right;" src="https://www.softpedia.com/_img/softpedia_100_free.png?2023_1" alt="" /></a>
+
 ### Compatibility
 
 Windows 8+ (requires [MS Visual C++ 2015](https://www.microsoft.com/en-us/download/details.aspx?id=52685), tested on Windows 10)
@@ -99,6 +101,7 @@ phase3_name = "Injury"
 The **coefficients** are used for the formula: **break = a * (work ^ (b + d * today_work)) + c**. Variables **work**, **today_work** and **break** represent in seconds. Consider setting **coefficient_d** to `0.00001528` to see how today work time can increase resting time.
 
 **daily_work_time_limit** represents in minutes, sends you notification when today work time reaches the limit, zero turns the notification off.
+
 **work_days_start_at** defines an hour when work days start at and count resets (from 0 to 23).
 
 **phase1_ends_at** and **phase2_ends_at** define current strain's thresholds to send you notifications.

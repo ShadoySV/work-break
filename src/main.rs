@@ -9,7 +9,7 @@ mod math;
 
 use app::{socket_name, App, Ipc};
 
-/// Work-break balancer can track your work time and suggest resting time
+/// Work and rest time balancer taking into account your current and today strain
 #[derive(Parser)]
 pub struct Cli {
     #[command(subcommand)]
@@ -36,6 +36,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let socket = socket_name();
 
     match &cli.command {
+        None => {
+            if let Ok(stream) = LocalSocketStream::connect(&*socket) {
+                ron::ser::to_writer(stream, &Ipc::Switch)?;
+            } else {
+                App::new()?.start(true)?;
+            }
+        }
         Some(Commands::Autorun) => {
             App::new()?.start(false)?;
         }
@@ -54,13 +61,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Terminate) => {
             let stream = LocalSocketStream::connect(&*socket).map_err(|_| "App is not running")?;
             ron::ser::to_writer(stream, &Ipc::Terminate)?;
-        }
-        None => {
-            if let Ok(stream) = LocalSocketStream::connect(&*socket) {
-                ron::ser::to_writer(stream, &Ipc::Switch)?;
-            } else {
-                App::new()?.start(true)?;
-            }
         }
     };
 
