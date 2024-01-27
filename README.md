@@ -20,7 +20,7 @@ The notification contains the current phase, strain and today work time, needed 
 
 ### Compatibility
 
-Windows 8+ (requires [MS Visual C++ 2015](https://www.microsoft.com/en-us/download/details.aspx?id=52685), tested on Windows 10)
+Windows 8+ (may require [MS Visual C++ 2015](https://www.microsoft.com/en-us/download/details.aspx?id=52685), tested on Windows 10/11)
 
 MacOS 10+ (tested on MacOS 11.7)
 
@@ -113,6 +113,12 @@ Restart your system or ask the app to apply the changed configuration:
 ```
 work-break reload
 ```
+
+## Troubleshooting
+
+##### Windows 11: App does not run and its notifications do not appear. "Do not disturb" mode is off.
+
+Look at [how to restore PowerShell notifications](https://answers.microsoft.com/en-us/windows/forum/all/powershell-toast-notifcations/a8a83b7a-0a4c-4f3d-b541-7e11403955fb)
 
 # Similar projects
 

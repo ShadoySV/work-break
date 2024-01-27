@@ -17,17 +17,7 @@ pub struct Activities {
 
 impl Activities {
     pub fn truncate_until(&mut self, point: SystemTime) {
-        self.list.retain_mut(|a| {
-            a.end
-                .map(|e| {
-                    let retain = e > point;
-                    if retain && a.start < point {
-                        a.start = point
-                    };
-                    retain
-                })
-                .unwrap_or(true)
-        });
+        self.list.retain(|a| a.start >= point);
     }
 
     /// Returns end, strain and total work
