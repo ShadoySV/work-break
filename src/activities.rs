@@ -24,7 +24,7 @@ impl Activities {
     pub fn summary(
         &self,
         formula: &Formula,
-        now: SystemTime,
+        time: SystemTime,
     ) -> (Option<SystemTime>, Duration, Duration) {
         let (end, strain, total_work) =
             self.list
@@ -41,7 +41,7 @@ impl Activities {
                             total_work,
                         );
                     };
-                    let work = end.unwrap_or(now).duration_since(*start).unwrap();
+                    let work = end.unwrap_or(time).duration_since(*start).unwrap();
                     strain += work;
                     total_work += work;
 
@@ -53,7 +53,7 @@ impl Activities {
                 formula.compute_strain(
                     formula
                         .compute_break(strain, total_work)
-                        .saturating_sub(now.duration_since(end).unwrap()),
+                        .saturating_sub(time.duration_since(end).unwrap()),
                     total_work,
                 )
             } else {
@@ -63,19 +63,19 @@ impl Activities {
         )
     }
 
-    pub fn switch(&mut self, now: SystemTime) {
+    pub fn switch(&mut self, time: SystemTime) {
         if let Some(last) = self.list.last_mut() {
             if last.end.is_some() {
                 self.list.push(Activity {
-                    start: now,
+                    start: time,
                     end: None,
                 })
             } else {
-                last.end = Some(now)
+                last.end = Some(time)
             }
         } else {
             self.list.push(Activity {
-                start: now,
+                start: time,
                 end: None,
             })
         }

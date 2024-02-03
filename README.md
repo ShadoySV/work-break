@@ -120,6 +120,6 @@ work-break reload
 
 Look at [how to restore PowerShell notifications](https://answers.microsoft.com/en-us/windows/forum/all/powershell-toast-notifcations/a8a83b7a-0a4c-4f3d-b541-7e11403955fb)
 
-# Similar projects
+## Similar projects
 
 [Bartib](https://github.com/nikolassv/bartib) is a simple time tracker for the command line. It saves a log of all tracked activities as a plaintext file and allows you to create flexible reports.

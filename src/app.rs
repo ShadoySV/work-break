@@ -136,7 +136,7 @@ impl App {
         })
     }
 
-    pub fn status(&mut self) -> Result<(Duration, Duration, String), Box<dyn std::error::Error>> {
+    pub fn status(&self) -> Result<(Duration, Duration, String), Box<dyn std::error::Error>> {
         let formula = Formula::new(
             &self.config.coefficient_a,
             &self.config.coefficient_b,
@@ -144,19 +144,6 @@ impl App {
             &self.config.coefficient_d,
         );
         let now = SystemTime::now();
-        let now_ch: DateTime<Local> = DateTime::from(now);
-        let morning = now_ch
-            .date_naive()
-            .and_hms_opt(self.config.work_days_start_at.into(), 0, 0)
-            .unwrap();
-        let mut morning_local = morning.and_local_timezone(Local).unwrap();
-        if now_ch < morning_local {
-            morning_local = morning_local
-                .checked_sub_days(chrono::Days::new(1))
-                .unwrap();
-        }
-        let truncate_point = UNIX_EPOCH + Duration::from_secs(morning_local.timestamp() as u64);
-        self.state.activities.truncate_until(truncate_point);
 
         let (end, strain, work) = self.state.activities.summary(&formula, now);
 
@@ -219,11 +206,31 @@ impl App {
     }
 
     pub fn switch(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        self.trancate_activities();
+
         let now = SystemTime::now();
         self.state.activities.switch(now);
         confy::store(APP_NAME, STATE_NAME, &self.state)?;
         self.notify(true)?;
         Ok(())
+    }
+
+    pub fn trancate_activities(&mut self) -> &mut Self {
+        let now = SystemTime::now();
+        let now_ch: DateTime<Local> = DateTime::from(now);
+        let morning = now_ch
+            .date_naive()
+            .and_hms_opt(self.config.work_days_start_at.into(), 0, 0)
+            .unwrap();
+        let mut morning_local = morning.and_local_timezone(Local).unwrap();
+        if now_ch < morning_local {
+            morning_local = morning_local
+                .checked_sub_days(chrono::Days::new(1))
+                .unwrap();
+        }
+        let truncate_point = UNIX_EPOCH + Duration::from_secs(morning_local.timestamp() as u64);
+        self.state.activities.truncate_until(truncate_point);
+        self
     }
 
     pub fn start(&self, switch: bool) -> Result<(), Box<dyn std::error::Error>> {

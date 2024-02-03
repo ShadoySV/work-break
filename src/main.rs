@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Some(Commands::Autorun) => {
-            App::new()?.start(false)?;
+            App::new()?.trancate_activities().start(false)?;
         }
         Some(Commands::Reload) => {
             let stream = LocalSocketStream::connect(&*socket).map_err(|_| "App is not running")?;
