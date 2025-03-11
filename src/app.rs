@@ -127,7 +127,7 @@ impl App {
             &config.coefficient_d,
         );
         let now = SystemTime::now();
-        let (_, last_strain, last_work) = state.activities.summary(&formula, now);
+        let (_, last_strain, last_work, _) = state.activities.summary(&formula, now);
         Ok(App {
             last_strain,
             last_work,
@@ -145,7 +145,7 @@ impl App {
         );
         let now = SystemTime::now();
 
-        let (end, strain, work) = self.state.activities.summary(&formula, now);
+        let (end, strain, total_strain, total_break) = self.state.activities.summary(&formula, now);
 
         let phase = if !self.state.activities.list.is_empty() && end.is_none() {
             let whole_minutes = strain.as_secs() / 60;
@@ -163,16 +163,30 @@ impl App {
             "Break"
         };
 
+        let break_info = if strain.is_zero() {
+            format!(
+                "today: {} hrs, {} min",
+                total_break.as_secs() / 3600,
+                (total_break.as_secs() - total_break.as_secs() / 3600 * 3600) / 60,
+            )
+        } else {
+            format!(
+                "ends at: {}",
+                DateTime::<Local>::from(now + formula.compute_break(strain, total_strain))
+                    .format("%X")
+            )
+        };
+
         let status = format!(
-            "Phase: {phase}\nStrain: {} min, today: {} hrs, {} min\nBreak: {} min, ends at: {}",
+            "Phase: {phase}\nStrain: {} min, today: {} hrs, {} min\nBreak: {} min, {}",
             strain.as_secs() / 60,
-            work.as_secs() / 3600,
-            (work.as_secs() - work.as_secs() / 3600 * 3600) / 60,
-            formula.compute_break(strain, work).as_secs() / 60,
-            DateTime::<Local>::from(now + formula.compute_break(strain, work)).format("%X"),
+            total_strain.as_secs() / 3600,
+            (total_strain.as_secs() - total_strain.as_secs() / 3600 * 3600) / 60,
+            formula.compute_break(strain, total_strain).as_secs() / 60,
+            break_info
         );
 
-        Ok((strain, work, status))
+        Ok((strain, total_strain, status))
     }
 
     pub fn notify(&mut self, notify_anyway: bool) -> Result<(), Box<dyn std::error::Error>> {

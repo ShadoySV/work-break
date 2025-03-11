@@ -12,7 +12,7 @@ This balancer sends you notifications on the following events:
 * It lasted for the daily work time limit if it is configured
 * Break ended
 
-The notification contains the current phase, strain and today work time, needed break, its end if it starts.
+The notification contains the current phase, strain and today work time, needed break, its end if it starts, today break time.
 
 ## How to install
 
@@ -91,10 +91,10 @@ coefficient_d = 0
 daily_work_time_limit = 0
 work_days_start_at = 0
 
-phase1_ends_at = 25
 phase1_name = "Pomodoro"
-phase2_ends_at = 52
+phase1_ends_at = 25
 phase2_name = "Efficiency"
+phase2_ends_at = 52
 phase3_name = "Injury"
 
 ```

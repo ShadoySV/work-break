@@ -20,46 +20,51 @@ impl Activities {
         self.list.retain(|a| a.start >= point);
     }
 
-    /// Returns end, strain and total work
+    /// Returns previous activity end, strain, total strain and total break
     pub fn summary(
         &self,
         formula: &Formula,
         time: SystemTime,
-    ) -> (Option<SystemTime>, Duration, Duration) {
-        let (end, strain, total_work) =
-            self.list
-                .iter()
-                .fold((None, Duration::ZERO, Duration::ZERO), |state, item| {
-                    let (prev_end, mut strain, mut total_work) = state;
-                    let Activity { start, end } = item;
-                    if let Some(prev_end) = prev_end {
-                        let rest = start.duration_since(prev_end).unwrap();
-                        strain = formula.compute_strain(
-                            formula
-                                .compute_break(strain, total_work)
-                                .saturating_sub(rest),
-                            total_work,
-                        );
-                    };
-                    let work = end.unwrap_or(time).duration_since(*start).unwrap();
-                    strain += work;
-                    total_work += work;
-
-                    (*end, strain, total_work)
-                });
+    ) -> (Option<SystemTime>, Duration, Duration, Duration) {
+        let (end, strain, total_strain, total_break) = self.list.iter().fold(
+            (None, Duration::ZERO, Duration::ZERO, Duration::ZERO),
+            |state, item| {
+                let (prev_end, mut strain, mut total_strain, mut total_break) = state;
+                let Activity { start, end } = item;
+                if let Some(prev_end) = prev_end {
+                    let to_break = formula.compute_break(strain, total_strain);
+                    let actual_break = start.duration_since(prev_end).unwrap();
+                    strain =
+                        formula.compute_strain(to_break.saturating_sub(actual_break), total_strain);
+                    total_break += to_break.min(actual_break);
+                };
+                let work = end.unwrap_or(time).duration_since(*start).unwrap();
+                strain += work;
+                total_strain += work;
+                (*end, strain, total_strain, total_break)
+            },
+        );
         (
             end,
             if let Some(end) = end {
                 formula.compute_strain(
                     formula
-                        .compute_break(strain, total_work)
+                        .compute_break(strain, total_strain)
                         .saturating_sub(time.duration_since(end).unwrap()),
-                    total_work,
+                    total_strain,
                 )
             } else {
                 strain
             },
-            total_work,
+            total_strain,
+            if let Some(end) = end {
+                total_break
+                    + formula
+                        .compute_break(strain, total_strain)
+                        .min(time.duration_since(end).unwrap())
+            } else {
+                total_break
+            },
         )
     }
 
