@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: brew install scdoc
       - name: Install ARM target
-        run: rustup update && rustup target add aarch64-apple-darwin
+        run: rustup update && rustup target add x86_64-apple-darwin aarch64-apple-darwin
       - name: Test
         run: cargo test --release
       - name: Make DMG
