@@ -1,7 +1,9 @@
 #![windows_subsystem = "windows"]
 
 use clap::{Parser, Subcommand};
-use interprocess::local_socket::LocalSocketStream;
+use interprocess::local_socket::{
+    prelude::*, traits::Stream, GenericFilePath, GenericNamespaced, NameType, ToFsName, ToNsName,
+};
 
 mod activities;
 mod app;
@@ -26,6 +28,10 @@ pub enum Commands {
     Status,
     /// Sends you notification with the current status
     Notify,
+    /// Tracks work time
+    Work,
+    /// Tracks break time
+    Break,
     /// Terminates the app
     Terminate,
 }
@@ -34,33 +40,61 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     let socket = socket_name();
+    let socket = if GenericNamespaced::is_supported() {
+        format!("{socket}.sock").to_ns_name::<GenericNamespaced>()?
+    } else {
+        format!("/tmp/{socket}.sock").to_fs_name::<GenericFilePath>()?
+    };
 
     match &cli.command {
         None => {
-            if let Ok(stream) = LocalSocketStream::connect(&*socket) {
+            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
                 ron::ser::to_writer(stream, &Ipc::Switch)?;
             } else {
-                App::new()?.start(true)?;
+                App::new()?.start(true, None)?;
+            }
+        }
+        Some(Commands::Work) => {
+            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
+                ron::ser::to_writer(stream, &Ipc::Work)?;
+            } else {
+                App::new()?.start(true, Some(true))?;
+            }
+        }
+        Some(Commands::Break) => {
+            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
+                ron::ser::to_writer(stream, &Ipc::Break)?;
+            } else {
+                App::new()?.start(true, Some(false))?;
             }
         }
         Some(Commands::Autorun) => {
-            App::new()?.trancate_activities().start(false)?;
+            App::new()?.trancate_activities().start(false, None)?;
         }
         Some(Commands::Reload) => {
-            let stream = LocalSocketStream::connect(&*socket).map_err(|_| "App is not running")?;
-            ron::ser::to_writer(stream, &Ipc::Reload)?;
+            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
+                ron::ser::to_writer(stream, &Ipc::Reload)?;
+            } else {
+                Err("App is not running")?;
+            }
         }
         Some(Commands::Status) => {
             let (_, _, status) = App::new()?.status()?;
             println!("{}", status);
         }
         Some(Commands::Notify) => {
-            let stream = LocalSocketStream::connect(&*socket).map_err(|_| "App is not running")?;
-            ron::ser::to_writer(stream, &Ipc::Notify)?;
+            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
+                ron::ser::to_writer(stream, &Ipc::Notify)?;
+            } else {
+                Err("App is not running")?;
+            }
         }
         Some(Commands::Terminate) => {
-            let stream = LocalSocketStream::connect(&*socket).map_err(|_| "App is not running")?;
-            ron::ser::to_writer(stream, &Ipc::Terminate)?;
+            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
+                ron::ser::to_writer(stream, &Ipc::Terminate)?;
+            } else {
+                Err("App is not running")?;
+            }
         }
     };
 

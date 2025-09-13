@@ -5,7 +5,9 @@ use std::{
 };
 
 use chrono::{DateTime, Local};
-use interprocess::local_socket::LocalSocketListener;
+use interprocess::local_socket::{
+    prelude::*, GenericFilePath, GenericNamespaced, ListenerOptions, NameType, ToFsName, ToNsName,
+};
 
 use notify_rust::Notification;
 use serde::{Deserialize, Serialize};
@@ -106,6 +108,8 @@ pub enum Ipc {
     Update,
     Notify,
     Switch,
+    Work,
+    Break,
     Terminate,
 }
 
@@ -247,8 +251,17 @@ impl App {
         self
     }
 
-    pub fn start(&self, switch: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn start(
+        &self,
+        switch: bool,
+        as_work: Option<bool>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let socket = socket_name();
+        let socket = if GenericNamespaced::is_supported() {
+            format!("{socket}.sock").to_ns_name::<GenericNamespaced>()?
+        } else {
+            format!("/tmp/{socket}.sock").to_fs_name::<GenericFilePath>()?
+        };
 
         let (sender, receiver) = sync_channel(0);
 
@@ -259,7 +272,7 @@ impl App {
 
         let socket_sender = sender.clone();
         thread::spawn(move || {
-            let stream = LocalSocketListener::bind(socket).unwrap();
+            let stream = ListenerOptions::new().name(socket).create_sync().unwrap();
             println!("App has been started");
 
             for stream in stream.incoming() {
@@ -283,7 +296,19 @@ impl App {
 
         let mut app = App::new()?;
         if switch {
-            app.switch()?;
+            if let Some(as_work) = as_work {
+                if as_work {
+                    let list = &*app.state.activities.list;
+                    if list.is_empty() || list[list.len() - 1].end.is_some() {
+                        app.switch()?;
+                    }
+                } else {
+                    let list = &*app.state.activities.list;
+                    if !list.is_empty() && list[list.len() - 1].end.is_none() {
+                        app.switch()?;
+                    }
+                }
+            }
         }
 
         for ipc in receiver.iter() {
@@ -299,6 +324,18 @@ impl App {
                 }
                 Ipc::Switch => {
                     app.switch()?;
+                }
+                Ipc::Work => {
+                    let list = &*app.state.activities.list;
+                    if list.is_empty() || list[list.len() - 1].end.is_some() {
+                        app.switch()?;
+                    }
+                }
+                Ipc::Break => {
+                    let list = &*app.state.activities.list;
+                    if !list.is_empty() && list[list.len() - 1].end.is_none() {
+                        app.switch()?;
+                    }
                 }
                 Ipc::Terminate => {
                     break;

@@ -1,6 +1,6 @@
 [package]
 name = "work-break"
-version = "0.6.2"
+version = "0.7.0"
 edition = "2021"
 description = "Work-break balancer for Windows / MacOS / Linux desktops"
 license = "MIT"
@@ -17,7 +17,7 @@ clap = { version = "4", features = ["derive"] }
 confy = "0.5"
 serde = { version = "1", features = ["derive"] }
 chrono = "0.4"
-interprocess = "1.2.1"
+interprocess = "2"
 ron = "0.8.0"
 ctrlc = { version = "3.2.5", features = ["termination"] }
 notify-rust = "4.8.0"
