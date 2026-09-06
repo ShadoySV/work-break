@@ -1,5 +1,7 @@
 #![windows_subsystem = "windows"]
 
+use std::io::Write;
+
 use clap::{Parser, Subcommand};
 use interprocess::local_socket::{
     prelude::*, traits::Stream, GenericFilePath, GenericNamespaced, NameType, ToFsName, ToNsName,
@@ -48,22 +50,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match &cli.command {
         None => {
-            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
-                ron::ser::to_writer(stream, &Ipc::Switch)?;
+            if let Ok(mut stream) = <LocalSocketStream as Stream>::connect(socket) {
+                let s = ron::ser::to_string(&Ipc::Switch)?;
+                stream.write_all(s.as_bytes())?;
             } else {
                 App::new()?.start(true, None)?;
             }
         }
         Some(Commands::Work) => {
-            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
-                ron::ser::to_writer(stream, &Ipc::Work)?;
+            if let Ok(mut stream) = <LocalSocketStream as Stream>::connect(socket) {
+                let s = ron::ser::to_string(&Ipc::Work)?;
+                stream.write_all(s.as_bytes())?;
             } else {
                 App::new()?.start(true, Some(true))?;
             }
         }
         Some(Commands::Break) => {
-            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
-                ron::ser::to_writer(stream, &Ipc::Break)?;
+            if let Ok(mut stream) = <LocalSocketStream as Stream>::connect(socket) {
+                let s = ron::ser::to_string(&Ipc::Break)?;
+                stream.write_all(s.as_bytes())?;
             } else {
                 App::new()?.start(true, Some(false))?;
             }
@@ -72,8 +77,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             App::new()?.trancate_activities().start(false, None)?;
         }
         Some(Commands::Reload) => {
-            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
-                ron::ser::to_writer(stream, &Ipc::Reload)?;
+            if let Ok(mut stream) = <LocalSocketStream as Stream>::connect(socket) {
+                let s = ron::ser::to_string(&Ipc::Reload)?;
+                stream.write_all(s.as_bytes())?;
             } else {
                 Err("App is not running")?;
             }
@@ -83,15 +89,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("{}", status);
         }
         Some(Commands::Notify) => {
-            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
-                ron::ser::to_writer(stream, &Ipc::Notify)?;
+            if let Ok(mut stream) = <LocalSocketStream as Stream>::connect(socket) {
+                let s = ron::ser::to_string(&Ipc::Notify)?;
+                stream.write_all(s.as_bytes())?;
             } else {
                 Err("App is not running")?;
             }
         }
         Some(Commands::Terminate) => {
-            if let Ok(stream) = <LocalSocketStream as Stream>::connect(socket) {
-                ron::ser::to_writer(stream, &Ipc::Terminate)?;
+            if let Ok(mut stream) = <LocalSocketStream as Stream>::connect(socket) {
+                let s = ron::ser::to_string(&Ipc::Terminate)?;
+                stream.write_all(s.as_bytes())?;
             } else {
                 Err("App is not running")?;
             }

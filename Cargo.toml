@@ -1,10 +1,9 @@
 [package]
 name = "work-break"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2021"
 description = "Work-break balancer for Windows / MacOS / Linux desktops"
 license = "MIT"
-authors = ["Sergei Shadoy <shadoysv@gmail.com>"]
 repository = "https://github.com/ShadoySV/work-break"
 keywords = ["productivity", "app", "cross-platform", "time-tracker"]
 
@@ -14,13 +13,13 @@ build = "build.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-confy = "0.5"
+confy = "2"
 serde = { version = "1", features = ["derive"] }
 chrono = "0.4"
 interprocess = "2"
-ron = "0.8.0"
-ctrlc = { version = "3.2.5", features = ["termination"] }
-notify-rust = "4.8.0"
+ron = "0.12"
+ctrlc = { version = "3.5", features = ["termination"] }
+notify-rust = "4.18"
 
 [target.'cfg(windows)'.build-dependencies]
-embed-resource = "2.2.0"
+embed-resource = "3"
