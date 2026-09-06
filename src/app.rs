@@ -9,8 +9,13 @@ use interprocess::local_socket::{
     prelude::*, GenericFilePath, GenericNamespaced, ListenerOptions, NameType, ToFsName, ToNsName,
 };
 
-use notify_rust::Notification;
 use serde::{Deserialize, Serialize};
+
+#[cfg(target_os = "macos")]
+use mac_notification_sys::{send_notification, set_application};
+
+#[cfg(not(target_os = "macos"))]
+use notify_rust::Notification;
 
 use crate::{
     activities::Activities,
@@ -208,13 +213,22 @@ impl App {
                 && work >= daily_work_time_limit;
 
         if notify_anyway || notify_on_threshold {
-            let mut notification = Notification::new();
-            notification
-                .summary("Work-break balancer")
-                .auto_icon()
-                .body(&status);
+            #[cfg(target_os = "macos")]
+            {
+                set_application("org.work-break").ok();
+                let _ = send_notification("Work-break balancer", None, &status, None);
+            }
 
-            notification.show()?;
+            #[cfg(not(target_os = "macos"))]
+            {
+                let mut notification = Notification::new();
+                notification
+                    .summary("Work-break balancer")
+                    .auto_icon()
+                    .body(&status);
+
+                notification.show()?;
+            }
         }
 
         self.last_strain = strain;
@@ -308,6 +322,8 @@ impl App {
                         app.switch()?;
                     }
                 }
+            } else {
+                app.switch()?;
             }
         }
 

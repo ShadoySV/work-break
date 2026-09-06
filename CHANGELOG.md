@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-09-06
+
+### Fixed
+
+- Fixed notifications not appearing on macOS: 'notify-rust'/'mac-notification-sys' looks up a non-existent '"use_default"' app, triggering a "Where is ised_default?" dialog, and its 'NSUserNotificationCenter' API no longer delivers banners on modern macOS. Switched to 'mac-notification-sys' with 'set_application("org.work-break")' so notifications use the app's bundle identity and icon
+- Fixed no notification on first launch: running without arguments now triggers a switch (which notifies) instead of starting silently
+
 ## [0.7.1] - 2026-09-06
 
 ### Changed

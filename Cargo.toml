@@ -1,6 +1,6 @@
 [package]
 name = "work-break"
-version = "0.7.1"
+version = "0.7.2"
 edition = "2021"
 description = "Work-break balancer for Windows / MacOS / Linux desktops"
 license = "MIT"
@@ -19,6 +19,11 @@ chrono = "0.4"
 interprocess = "2"
 ron = "0.12"
 ctrlc = { version = "3.5", features = ["termination"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+mac-notification-sys = "0.6"
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
 notify-rust = "4.18"
 
 [target.'cfg(windows)'.build-dependencies]

@@ -1574,7 +1574,7 @@ dependencies = [
 
 [[package]]
 name = "work-break"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "chrono",
  "clap",
@@ -1582,6 +1582,7 @@ dependencies = [
  "ctrlc",
  "embed-resource",
  "interprocess",
+ "mac-notification-sys",
  "notify-rust",
  "ron",
  "serde",
