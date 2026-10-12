@@ -217,7 +217,8 @@ impl App {
 
                 set_application("org.work-break").ok();
 
-                let _ = send_notification("Work-break balancer", None, &status, Some(notification));
+                let _ =
+                    send_notification("Work-break balancer", None, &status, Some(&notification));
             }
 
             #[cfg(not(target_os = "macos"))]
