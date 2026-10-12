@@ -215,8 +215,11 @@ impl App {
         if notify_anyway || notify_on_threshold {
             #[cfg(target_os = "macos")]
             {
+                let notification = Notification::new().default_sound();
+
                 set_application("org.work-break").ok();
-                let _ = send_notification("Work-break balancer", None, &status, None);
+
+                let _ = send_notification("Work-break balancer", None, &status, Some(notification));
             }
 
             #[cfg(not(target_os = "macos"))]
@@ -225,6 +228,9 @@ impl App {
                 notification
                     .summary("Work-break balancer")
                     .auto_icon()
+                    .hint(notify_rust::Hint::SoundName(
+                        "message-new-instant".to_owned(),
+                    ))
                     .body(&status);
 
                 notification.show()?;
