@@ -211,7 +211,9 @@ impl App {
             {
                 use mac_notification_sys::{send_notification, set_application, Notification};
 
-                let notification = Notification::new().default_sound();
+                let mut notification = Notification::new();
+
+                notification.default_sound();
 
                 set_application("org.work-break").ok();
 
@@ -226,8 +228,10 @@ impl App {
                 notification
                     .summary("Work-break balancer")
                     .auto_icon()
-                    .hint(Hint::SoundName("message-new-instant".to_owned()))
                     .body(&status);
+
+                #[cfg(unix)]
+                notification.hint(Hint::SoundName("message-new-instant".to_owned()));
 
                 notification.show()?;
             }

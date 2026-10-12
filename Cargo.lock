@@ -1574,7 +1574,7 @@ dependencies = [
 
 [[package]]
 name = "work-break"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "chrono",
  "clap",
