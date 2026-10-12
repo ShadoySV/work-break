@@ -11,12 +11,6 @@ use interprocess::local_socket::{
 
 use serde::{Deserialize, Serialize};
 
-#[cfg(target_os = "macos")]
-use mac_notification_sys::{send_notification, set_application};
-
-#[cfg(not(target_os = "macos"))]
-use notify_rust::Notification;
-
 use crate::{
     activities::Activities,
     math::{CoefficientA, CoefficientB, CoefficientC, CoefficientD, Formula},
@@ -215,6 +209,8 @@ impl App {
         if notify_anyway || notify_on_threshold {
             #[cfg(target_os = "macos")]
             {
+                use mac_notification_sys::{send_notification, set_application, Notification};
+
                 let notification = Notification::new().default_sound();
 
                 set_application("org.work-break").ok();
@@ -224,13 +220,13 @@ impl App {
 
             #[cfg(not(target_os = "macos"))]
             {
+                use notify_rust::{Hint, Notification};
+
                 let mut notification = Notification::new();
                 notification
                     .summary("Work-break balancer")
                     .auto_icon()
-                    .hint(notify_rust::Hint::SoundName(
-                        "message-new-instant".to_owned(),
-                    ))
+                    .hint(Hint::SoundName("message-new-instant".to_owned()))
                     .body(&status);
 
                 notification.show()?;
